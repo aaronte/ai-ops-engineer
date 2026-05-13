@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Opendoor Application — AI Ops pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1114;
+      --bg-elevated: #171a1f;
+      --border: #2a3038;
+      --text: #e8eaed;
+      --muted: #9aa3ad;
+      --faint: #5c6570;
+      --accent: #3d7eef;
+      --accent-soft: rgba(61, 126, 239, 0.14);
+      --success: #3ecf8e;
+      --warning: #e8b44f;
+      --radius: 10px;
+      --font: "DM Sans", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+      --max: 1040px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: none;
+      margin: 0 auto;
+      padding: 32px 38px 80px;
+    }
+
+    header.hero {
+      margin-bottom: 28px;
+    }
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: clamp(1.45rem, 3vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 12px;
+      line-height: 1.2;
+    }
+    .hero-links {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 18px;
+      line-height: 1.55;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 28px 0 18px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+    }
+    .toolbar h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 28px 0 18px;
+    }
+    .tab-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 16px;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .tab-btn:hover {
+      border-color: var(--faint);
+      color: var(--text);
+    }
+    .tab-btn.active {
+      border-color: rgba(61,126,239,0.45);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .tab-panel[hidden] {
+      display: none;
+    }
+
+    .stepper-viewport {
+      position: relative;
+      margin: 0 0 20px;
+      min-height: calc(100vh - 160px);
+    }
+    .stepper-viewport::before,
+    .stepper-viewport::after {
+      display: none;
+    }
+
+    .stepper {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      gap: 0;
+      padding: 0 0 28px;
+      min-height: calc(100vh - 160px);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+    }
+    .stepper::-webkit-scrollbar {
+      height: 9px;
+    }
+    .stepper::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .stepper::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 999px;
+    }
+    .step {
+      flex: 0 0 auto;
+      width: min(1120px, calc(100vw - 132px));
+      min-width: min(1120px, calc(100vw - 132px));
+      display: flex;
+      flex-direction: column;
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+    .step:nth-of-type(1) { animation-delay: 40ms; }
+    .step:nth-of-type(2) { animation-delay: 90ms; }
+    .step:nth-of-type(3) { animation-delay: 140ms; }
+    .step:nth-of-type(4) { animation-delay: 190ms; }
+    .step:nth-of-type(5) { animation-delay: 240ms; }
+    .step:nth-of-type(6) { animation-delay: 290ms; }
+    body.dashboard-ready .step {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+    .step-sep {
+      position: relative;
+      flex: 0 0 auto;
+      width: 56px;
+      height: 2px;
+      margin: 0 12px;
+      background: var(--faint);
+      user-select: none;
+      align-self: center;
+      transform: translateY(21px);
+    }
+    .step-sep::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -1px;
+      width: 10px;
+      height: 10px;
+      border-top: 2px solid var(--faint);
+      border-right: 2px solid var(--faint);
+      transform: translateY(-50%) rotate(45deg);
+    }
+    .step-kicker {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 34px;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .step-kicker span:first-child {
+      max-width: 420px;
+    }
+    .step-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .step-label > span:first-child {
+      min-width: 0;
+    }
+    .step-meta {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .step-btn {
+      position: relative;
+      border: 2px solid rgba(232, 234, 237, 0.45);
+      background: rgba(255, 255, 255, 0.96);
+      color: #20242a;
+      border-radius: 6px;
+      padding: 0;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+      width: 100%;
+      min-width: 0;
+      height: calc(100vh - 190px);
+      min-height: 680px;
+      max-height: 920px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+      align-items: stretch;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      transition: none;
+    }
+    .step-btn:hover {
+      border-color: rgba(232, 234, 237, 0.75);
+      transform: none;
+    }
+    .step-btn.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(61, 126, 239, 0.22), 0 18px 40px rgba(0, 0, 0, 0.28);
+    }
+    .step-btn.running {
+      border-color: transparent;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 22px 52px rgba(0, 0, 0, 0.34);
+    }
+    /* Draws a stroke around the perimeter: top, right, bottom, then left. */
+    .step-btn.running::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 6px;
+      background:
+        linear-gradient(90deg, var(--accent), var(--success)) left top / 100% 2px no-repeat,
+        linear-gradient(180deg, var(--success), var(--warning)) right top / 2px 100% no-repeat,
+        linear-gradient(270deg, var(--warning), var(--accent)) right bottom / 100% 2px no-repeat,
+        linear-gradient(0deg, var(--accent), var(--accent)) left bottom / 2px 100% no-repeat;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .step-btn.running .step-card-body {
+      position: relative;
+      z-index: 1;
+    }
+    .step-card-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      color: #20242a;
+      background: rgba(255, 255, 255, 0.95);
+      scroll-behavior: auto;
+      overscroll-behavior: contain;
+    }
+    .step-card-body .panel-head {
+      color: #20242a;
+      border-bottom-color: rgba(32, 36, 42, 0.14);
+    }
+    .step-card-body .panel-head .internal,
+    .step-card-body .meta {
+      color: #66707c;
+    }
+    .step-card-body .playback,
+    .step-card-body .flow-card,
+    .step-card-body .callout,
+    .step-card-body input,
+    .step-card-body select,
+    .step-card-body textarea {
+      background: #f7f8fa;
+      color: #20242a;
+      border-color: rgba(32, 36, 42, 0.16);
+    }
+    .step-card-body pre {
+      background: #eef2f6;
+      color: #20242a;
+    }
+    .step-card-body table.data th {
+      color: #66707c;
+    }
+    .step-card-body table.data th,
+    .step-card-body table.data td {
+      border-bottom-color: rgba(32, 36, 42, 0.12);
+    }
+    .step-card-body .artifacts {
+      color: #66707c;
+    }
+    .stage-explainer {
+      margin: 0 0 18px;
+      padding: 14px 16px;
+      border: 1px solid rgba(61, 126, 239, 0.24);
+      border-radius: 10px;
+      background: rgba(61, 126, 239, 0.08);
+      color: #20242a;
+    }
+    .stage-explainer strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #315fb0;
+    }
+    .stage-explainer p {
+      margin: 0;
+      color: #3f4751;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.86);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      margin-top: 0;
+    }
+    .pill.pending { color: var(--warning); border-color: rgba(232,180,79,0.35); }
+    .pill.idle { color: var(--muted); border-color: var(--border); background: rgba(255,255,255,0.03); }
+    .pill.done { color: var(--success); border-color: rgba(62,207,142,0.35); }
+    .pill.active { color: var(--accent); border-color: rgba(61,126,239,0.45); }
+
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    button.btn {
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button.btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    button.btn-primary:hover { filter: brightness(1.06); }
+    button.btn:disabled {
+      cursor: wait;
+      opacity: 0.78;
+      filter: none;
+    }
+    .btn-spinner {
+      width: 13px;
+      height: 13px;
+      border: 2px solid rgba(255, 255, 255, 0.45);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 700ms linear infinite;
+    }
+    button.btn-ghost {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--muted);
+    }
+    button.btn-ghost:hover {
+      border-color: var(--faint);
+      color: var(--text);
+    }
+    .step-card-body button.btn-ghost {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(61, 126, 239, 0.36);
+      color: #315fb0;
+    }
+    .step-card-body button.btn-ghost:hover {
+      background: rgba(61, 126, 239, 0.08);
+      border-color: rgba(61, 126, 239, 0.58);
+      color: #244d92;
+    }
+
+    .panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .panel-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      align-items: start;
+      gap: 4px 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-head-titles {
+      grid-column: 1;
+      grid-row: 1 / -1;
+      min-width: 0;
+    }
+    .panel-head h3 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .panel-head .internal {
+      display: block;
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .panel-head-run {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+      align-self: start;
+    }
+    .panel-body {
+      padding: 20px;
+    }
+
+    .meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+    table.data th,
+    table.data td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    table.data th {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    table.data td.url {
+      font-family: var(--mono);
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .playback {
+      margin-top: 22px;
+      padding: 18px;
+      border-top: 1px solid var(--border);
+      border-radius: 12px;
+      background: #edf3fa;
+    }
+    .playback h4 {
+      margin: 0 0 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #526071;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .event {
+      margin-bottom: 14px;
+      padding: 16px 18px;
+      border: 1px solid rgba(32,36,42,0.12);
+      border-left: 4px solid rgba(61,126,239,0.5);
+      border-radius: 12px;
+      background: #fff;
+      color: #20242a;
+      box-shadow: 0 2px 8px rgba(32,36,42,0.04);
+    }
+    .event:last-child {
+      margin-bottom: 0;
+    }
+    .event-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .event-title {
+      font-weight: 700;
+      color: #20242a;
+      line-height: 1.3;
+    }
+    .model-chip {
+      flex: 0 0 auto;
+      max-width: 260px;
+      padding: 5px 8px;
+      border: 1px solid rgba(61,126,239,0.22);
+      border-radius: 999px;
+      background: rgba(61,126,239,0.08);
+      color: #315fb0;
+      font-family: var(--mono);
+      font-size: 10px;
+      line-height: 1.2;
+      text-align: right;
+      white-space: normal;
+    }
+    .event .tag {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #526071;
+      margin-bottom: 6px;
+    }
+    .event p {
+      color: #20242a !important;
+      line-height: 1.55;
+    }
+    .event.prompt pre {
+      margin: 8px 0 0;
+      padding: 12px 14px;
+      background: #eef2f6;
+      border: 1px solid rgba(32,36,42,0.12);
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      white-space: pre-wrap;
+      color: #20242a;
+    }
+    .work-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    .work-table th,
+    .work-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(32,36,42,0.12);
+      text-align: left;
+      vertical-align: top;
+    }
+    .work-table th {
+      color: #526071;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .work-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: #20242a;
+    }
+    .work-list li {
+      margin: 6px 0;
+      line-height: 1.45;
+    }
+    .run-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #3f4751;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .run-dot {
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: transparent;
+      border: 2px solid var(--accent);
+      opacity: 0.9;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .step,
+      .run-dot,
+      .btn-spinner,
+      .step-btn.running::before {
+        animation: none;
+      }
+      .step-btn.running::before {
+        display: none;
+      }
+      .step-btn.running {
+        border-color: rgba(61, 126, 239, 0.55);
+      }
+      .run-dot {
+        border-width: 2px;
+        border-color: var(--accent);
+        opacity: 1;
+      }
+      .step {
+        opacity: 1;
+        transform: none;
+      }
+    }
+    .run-empty {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border: 1px dashed rgba(61,126,239,0.28);
+      border-radius: 10px;
+      background: rgba(61,126,239,0.06);
+      color: #3f4751;
+    }
+    .run-empty-icon {
+      flex: 0 0 auto;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: rgba(61,126,239,0.12);
+      color: #315fb0;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .run-empty strong {
+      display: block;
+      margin-bottom: 3px;
+      color: #20242a;
+      font-size: 13px;
+    }
+    .run-empty p {
+      margin: 0;
+      color: #526071;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .run-call-pill {
+      display: inline-block;
+      margin: 10px 0 0;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-family: var(--mono);
+      color: #315fb0;
+      background: rgba(61, 126, 239, 0.1);
+      border: 1px solid rgba(61, 126, 239, 0.22);
+    }
+    .run-thinking {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      max-height: min(52vh, 420px);
+      overflow: auto;
+      scroll-behavior: auto;
+      overscroll-behavior: contain;
+      border-radius: 10px;
+      border: 1px solid rgba(32, 36, 42, 0.1);
+      background: rgba(255, 255, 255, 0.85);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #2a3038;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .step-card-body,
+      .run-thinking {
+        scroll-behavior: auto;
+      }
+    }
+
+    .artifacts {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .artifact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .artifact-card {
+      padding: 11px 12px;
+      border: 1px solid rgba(32,36,42,0.12);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.72);
+    }
+    button.artifact-card {
+      display: block;
+      width: 100%;
+      font-family: inherit;
+      text-align: left;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    button.artifact-card:hover,
+    button.artifact-card.active {
+      border-color: rgba(61, 126, 239, 0.4);
+      box-shadow: 0 1px 8px rgba(32, 36, 42, 0.08);
+    }
+    button.artifact-card.active {
+      background: rgba(61,126,239,0.08);
+    }
+    button.artifact-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .artifact-card strong {
+      display: block;
+      color: #20242a;
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .artifact-card span {
+      display: block;
+      color: #526071;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .artifact-viewer {
+      margin-top: 12px;
+      border: 1px solid rgba(32,36,42,0.12);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.74);
+    }
+    .artifact-viewer-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(32,36,42,0.12);
+    }
+    .artifact-viewer-head strong {
+      color: #20242a;
+      font-family: var(--mono);
+      font-size: 12px;
+      word-break: break-word;
+    }
+    .artifact-viewer-head a {
+      font-size: 12px;
+    }
+    .artifact-viewer pre {
+      max-height: 320px;
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      background: #f7f8fa;
+      color: #20242a;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .artifact-viewer-empty {
+      margin: 0;
+      padding: 12px;
+      color: #526071;
+      font-size: 13px;
+    }
+
+    .grid-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 640px) {
+      .grid-form { grid-template-columns: 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+    }
+    input[type="checkbox"] {
+      width: auto;
+      padding: 0;
+    }
+    .confirmation-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      max-width: 520px;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(32,36,42,0.14);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.45);
+      cursor: pointer;
+      color: #3f4751;
+    }
+    .confirmation-check input {
+      flex: 0 0 auto;
+      margin-top: 3px;
+    }
+    .confirmation-check span {
+      line-height: 1.4;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+
+    .callout {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(61,126,239,0.35);
+      background: var(--accent-soft);
+      font-size: 14px;
+    }
+    .callout.success {
+      border-color: rgba(62,207,142,0.35);
+      background: rgba(62,207,142,0.08);
+    }
+
+    .flow3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    @media (max-width: 720px) {
+      .flow3 { grid-template-columns: 1fr; }
+    }
+    .flow-card {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+    }
+    .flow-card strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .flow-card span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    section.block {
+      margin-top: 36px;
+    }
+    section.block h2 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0 0 14px;
+    }
+
+    footer {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .footer-actions {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Opendoor · Operations AI Engineer · Toronto</div>
+      <h1>An AI-Built Offer on Your AI Ops Listing</h1>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Dashboard views">
+      <button type="button" class="tab-btn active" id="tab-tracker" role="tab" aria-controls="panel-tracker" aria-selected="true" data-tab="tracker">
+        Application tracker
+      </button>
+      <button type="button" class="tab-btn" id="tab-lineup" role="tab" aria-controls="panel-lineup" aria-selected="false" data-tab="lineup">
+        Model lineup
+      </button>
+    </div>
+
+    <div class="tab-panel" id="panel-tracker" role="tabpanel" aria-labelledby="tab-tracker">
+      <div class="stepper-viewport" aria-label="Application stages — scroll horizontally">
+        <div class="stepper" id="stepper"></div>
+      </div>
+    </div>
+
+    <section class="block tab-panel" id="panel-lineup" role="tabpanel" aria-labelledby="tab-lineup" hidden>
+      <h2>The Lineup</h2>
+      <div style="overflow-x:auto;">
+        <table class="data" id="lineup-table"></table>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:10px;">
+        Totals update when you log real calls to <code style="font-family:var(--mono);font-size:12px;">application/model-calls.jsonl</code>.
+      </p>
+    </section>
+
+    <footer>
+      <strong style="color:var(--text);">How this was built</strong><br />
+      Standalone HTML dashboard — pipeline tracker with layout you fully control in one file.
+      Open this file in any browser. State loads from <code style="font-family:var(--mono);font-size:12px;">application/dashboard-state.json</code>; local dev writes updates back to that file.
+      <div class="hero-links">
+        <strong>Listing mirror:</strong>
+        <a id="link-job" href="#">Built In</a>
+        <span style="color:var(--faint)"> · </span>
+        <strong>Repo:</strong>
+        <a id="link-repo" href="#">GitHub</a>
+      </div>
+      <div class="footer-actions">
+        <button type="button" class="btn btn-ghost" id="btn-reset-stages">Reset stages</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const STATE_FILE_URL = "application/dashboard-state.json";
+    const STATE_API_URL = "/api/dashboard-state";
+    const JOB_BOARD_URL =
+      "https://builtintoronto.com/job/operations-ai-engineer/9272826";
+    const RIPPLING_APPLY_BASE =
+      "https://ats.rippling.com/en-CA/opendoor/jobs";
+    const REPO_PLACEHOLDER =
+      "https://github.com/aaronte/ai-ops-engineer";
+    /** Branch for GitHub links on artifact cards (must match your default branch). */
+    const ARTIFACTS_BRANCH = "main";
+    /** Build scripts replace this with local artifact text so previews do not depend on fetch paths. */
+    const EMBEDDED_ARTIFACTS = {};
+
+    function artifactBlobUrl(relPath) {
+      const base = REPO_PLACEHOLDER.replace(/\/$/, "");
+      const encoded = relPath
+        .split("/")
+        .map((seg) => encodeURIComponent(seg))
+        .join("/");
+      return `${base}/blob/${ARTIFACTS_BRANCH}/${encoded}`;
+    }
+
+    function artifactRawUrl(relPath) {
+      const encoded = relPath
+        .split("/")
+        .map((seg) => encodeURIComponent(seg))
+        .join("/");
+      return encoded;
+    }
+
+    function artifactCandidateUrls(relPath) {
+      const encoded = artifactRawUrl(relPath);
+      const withoutApplication = encoded.replace(/^application\//, "");
+      return [...new Set([
+        encoded,
+        withoutApplication,
+        `../${encoded}`,
+        `/${encoded}`,
+      ])];
+    }
+
+    const MODEL_LINEUP_ROWS = [
+      { area: "1a JD parse", model: "google/gemini-2.5-pro-preview", provider: "Google", why: "Long-context + multimodal-ready", tokens: "6.2k", stageId: 1, step: 1, elapsed: "8.1s" },
+      { area: "1b Comps", model: "perplexity/sonar", provider: "Perplexity", why: "Live web comps retrieval", tokens: "900", stageId: 1, step: 2, elapsed: "2.3s" },
+      { area: "2 Pre-approval", model: "anthropic/claude-opus-4", provider: "Anthropic", why: "Structured requirement mapping", tokens: "11k", stageId: 2, step: 3, elapsed: "14s" },
+      { area: "3a Resume", model: "openai/gpt-4o", provider: "OpenAI", why: "Structured Markdown drafting", tokens: "4.2k", stageId: 3, step: 1, elapsed: "5.2s" },
+      { area: "3a Letter", model: "anthropic/claude-opus-4", provider: "Anthropic", why: "Voice + judgment", tokens: "5.1k", stageId: 3, step: 2, elapsed: "9.1s" },
+      { area: "3b Critique", model: "deepseek/deepseek-r1", provider: "DeepSeek", why: "Cross-family rubric", tokens: "9.8k", stageId: 3, step: 3, elapsed: "22s" },
+      { area: "3c Revise", model: "anthropic/claude-opus-4", provider: "Anthropic", why: "Revision pass", tokens: "7.6k", stageId: 3, step: 4, elapsed: "11.2s" },
+      { area: "4 Inspection", model: "openai/gpt-4o", provider: "OpenAI", why: "Gap memo + repo prep", tokens: "3.2k", stageId: 4, step: 2, elapsed: "4.1s" },
+      { area: "5 Field map", model: "openai/gpt-4o-mini", provider: "OpenAI", why: "Codegen-shaped mapping", tokens: "2.1k", stageId: 5, step: 1, elapsed: "2.8s" },
+    ];
+
+    const CLOSING_ORIGINAL = {
+      firstName: "[REPLACE_ME]",
+      lastName: "[REPLACE_ME]",
+      email: "[REPLACE_ME]",
+      phone: "[REPLACE_ME]",
+      linkedin: "[REPLACE_ME]",
+      portfolio: "[REPLACE_ME]",
+      workAuth: "[REPLACE_ME]",
+      coverNote: "[REPLACE_ME]",
+    };
+
+    const STAGES_BASE = [
+      {
+        id: 1,
+        display: "The Walkthrough",
+        internal: "Find the real job post",
+        explainer:
+          "This stage finds the official application page, checks it against public job listings, and records the source links so the rest of the work starts from the right posting.",
+        pill: "Done",
+        status: "done",
+        previewPending:
+          "Find the official application page and compare it with public listings.",
+        summaryDone:
+          "The official apply path is Rippling; Built In is kept as a readable copy of the job post.",
+        metaStrip:
+          "Gemini-class parse · Google · see model-calls.jsonl · Perplexity comps",
+        compsTable: {
+          headers: ["Surface", "URL", "Verdict"],
+          rows: [
+            ["Rippling ATS", RIPPLING_APPLY_BASE, "Apply here (canonical)"],
+            ["Built In Toronto", JOB_BOARD_URL, "JD reference / comp"],
+            ["Opendoor hiring hub", "https://projects.opendoor.com/toronto-hiring/", "Narrative context"],
+            ["LinkedIn / Indeed / Wellfound", "Search: role + Toronto", "Freshness cross-check"],
+          ],
+        },
+        playback: [
+          {
+            kind: "text",
+            body: "Compared the places this role appears and decided which source should drive the application.",
+            table: {
+              headers: ["Surface", "What it is", "Decision"],
+              rows: [
+                ["Rippling ATS", "Official application system.", "Use this as the apply path."],
+                ["Built In Toronto", "Readable public copy of the job post.", "Use this as the reviewer-friendly mirror."],
+                ["Opendoor hiring hub", "Company hiring context.", "Keep as background context."],
+                ["LinkedIn / Indeed / Wellfound", "Discovery boards that may lag or duplicate listings.", "Use only for freshness checks."],
+              ],
+            },
+          },
+          { kind: "decision", body: "Use Rippling as the source of truth for applying. Keep Built In as the mirror because it is easier for reviewers to read and reference." },
+          { kind: "prompt", body: "Extract the role title, location, responsibilities, requirements, tools, and application URL into a clean markdown job-posting file." },
+        ],
+      },
+      {
+        id: 2,
+        display: "Pre-Approval",
+        internal: "Match the role to the resume",
+        explainer:
+          "This stage reads the job requirements and turns them into a simple checklist: what the role asks for, what evidence the application already has, and what still needs to be filled in.",
+        pill: "Done",
+        status: "done",
+        previewPending: "Compare the role requirements with the candidate evidence.",
+        summaryDone:
+          "The role requirements are mapped to supporting evidence in requirements-map.md.",
+        metaStrip: "Requirements checklist · evidence review · gaps to fill",
+        playback: [
+          {
+            kind: "text",
+            body: "Converted the job post into a checklist of what Opendoor is asking for.",
+            table: {
+              headers: ["Requirement", "What it means in plain English", "Evidence to show"],
+              rows: [
+                ["AI workflow building", "Can build useful AI-assisted processes, not just talk about AI.", "Examples of agents, automations, prompts, or model-powered workflows shipped."],
+                ["Operations ownership", "Can take an ambiguous process and make it reliable.", "Runbooks, handoff docs, dashboards, process fixes, or recurring operating rhythms."],
+                ["Data fluency", "Can inspect data, define metrics, and notice when outputs are wrong.", "SQL, analytics dashboards, QA checks, metric definitions, or monitoring work."],
+                ["Cross-functional communication", "Can explain the system clearly to non-engineers.", "Readable docs, stakeholder updates, decision logs, and concise summaries."],
+              ],
+            },
+          },
+          {
+            kind: "decision",
+            body: "Flagged the places where the application still needs stronger proof before it is recruiter-ready.",
+            table: {
+              headers: ["Gap", "Why it matters", "Fix before submitting"],
+              rows: [
+                ["Real metrics", "Claims are less credible without numbers.", "Add measurable outcomes: time saved, volume handled, quality lift, or error reduction."],
+                ["Specific shipped examples", "The role needs evidence of hands-on building.", "Name 2-3 workflows or systems and what changed because of them."],
+                ["Production judgment", "AI Ops needs reliability and guardrails.", "Show review steps, fallbacks, monitoring, or human approval points."],
+              ],
+            },
+          },
+          {
+            kind: "prompt",
+            body: "Create a requirements map from the job post.",
+            table: {
+              headers: ["Role requirement", "Candidate evidence", "Gap to fill"],
+              rows: [
+                ["Build AI workflows for operations", "Dashboard + staged application workflow demonstrates process design.", "Replace placeholders with real shipped workflow examples."],
+                ["Use data to improve operations", "Application structure includes model logs and review steps.", "Add actual SQL/analytics examples if available."],
+                ["Communicate clearly with stakeholders", "Dashboard explains each stage and keeps reviewer context visible.", "Tighten resume bullets into plain outcomes."],
+              ],
+            },
+          },
+        ],
+      },
+      {
+        id: 3,
+        display: "Drafting the Offer",
+        internal: "Write the application materials",
+        explainer:
+          "This stage drafts the tailored resume and cover letter, then reviews them for clarity, relevance, and missing proof before producing the final application package.",
+        pill: "Done",
+        status: "done",
+        previewPending: "Draft the resume and cover letter, then review and revise them.",
+        summaryDone:
+          "The tailored resume and cover letter are drafted and reviewed.",
+        metaStrip: "Draft resume · draft cover letter · critique · final revision",
+        playback: [
+          { kind: "text", body: "Drafted a resume structure that points directly at the role: AI workflows, operations systems, data/process work, and measurable delivery." },
+          { kind: "text", body: "Drafted a short cover letter that explains the application artifact itself and why that is relevant to an AI Operations role." },
+          { kind: "decision", body: "The review found the main risk: the materials need concrete numbers and proof, not just polished claims." },
+          { kind: "prompt", body: "Review the resume and cover letter against the job post. Call out missing proof, vague claims, weak wording, and anything that would reduce recruiter trust." },
+        ],
+      },
+      {
+        id: 4,
+        display: "Inspection & Due Diligence",
+        internal: "Check what could go wrong",
+        explainer:
+          "This stage reviews the package before it goes public: missing details, broken links, private information, confusing wording, and anything that would make the application harder to trust.",
+        pill: "Done",
+        status: "done",
+        previewPending: "Review the package for gaps, links, privacy, and clarity.",
+        summaryDone:
+          "The package is checked and prepared for a public GitHub repo.",
+        metaStrip: "Broken-link check · privacy check · repo packaging",
+        playback: [
+          { kind: "text", body: "Checked the package for practical failure points: broken links, placeholder text, private information, PDF/export issues, and whether the repo tells a coherent story." },
+          { kind: "decision", body: "Ship the repo and dashboard as the main artifact. Avoid adding extra media unless it makes the submission clearer." },
+        ],
+      },
+      {
+        id: 5,
+        display: "Closing",
+        internal: "Prepare the final form",
+        explainer:
+          "This stage mirrors the application fields so the final answers can be reviewed in one place before they are copied into Rippling and submitted by a human.",
+        pill: "In progress",
+        status: "done",
+        previewPending:
+          "Review the final application fields before submitting in Rippling.",
+        summaryDone:
+          "The final application fields are mirrored below and can be edited here.",
+        metaStrip:
+          "Field review · final handoff · human submit",
+        playback: [
+          { kind: "text", body: "Copied the final application fields into this dashboard so they can be reviewed before submission." },
+          { kind: "decision", body: "Stop before the final Rippling submit button. The dashboard can prepare and verify the application, but a human should make the final submission." },
+        ],
+      },
+      {
+        id: 6,
+        display: "Offer Submitted",
+        internal: "Record the submission",
+        explainer:
+          "This stage marks the application as submitted, saves the confirmation, and keeps the repo/dashboard ready for anyone reviewing the work.",
+        pill: "Done",
+        status: "pending",
+        previewPending:
+          "After the Rippling confirmation appears, mark the application as submitted.",
+        summaryDone: "Offer logged — awaiting Opendoor response.",
+        metaStrip: "Submission confirmation · screenshot · final repo polish",
+        playback: [
+          { kind: "text", body: "After Rippling confirms the application, save proof of submission and make sure the public repo/dashboard are ready for review." },
+        ],
+      },
+    ];
+
+    let dashboardState = {};
+    let stateWriteTimer = null;
+
+    function load(key, fallback) {
+      return Object.prototype.hasOwnProperty.call(dashboardState, key) ? dashboardState[key] : fallback;
+    }
+    function save(key, value) {
+      dashboardState[key] = value;
+      queueStateWrite();
+    }
+    function remove(key) {
+      delete dashboardState[key];
+      queueStateWrite();
+    }
+
+    let selectedStage = load("stage", 1);
+    let selectedTab = load("tab", "tracker");
+    let offerSubmitted = load("offerSubmitted", false);
+    let playReveal = load("playReveal", {});
+    let handoffOpen = load("handoffOpen", false);
+    let runningStageId = null;
+    /** Live model output while POST /api/run-stage-stream is in flight (dev server only). */
+    let liveRunFeed = null;
+    let thinkingRaf = null;
+    /** While model output streams, only auto-stick to bottom when the user has not scrolled up. */
+    let liveRunScrollFollowThinking = true;
+    let liveRunScrollFollowCard = true;
+    /** Ignore scroll affinity updates from our own programmatic scrollTo during follow. */
+    let suppressLiveScrollAffinity = false;
+    /** Throttle smooth-follow so streaming output feels fluid instead of jittery. */
+    let lastLiveSmoothAt = 0;
+    let activeRunController = null;
+    let activeRunToken = 0;
+    /** After the API returns, avoid showing "Running…" during the short reveal delay. */
+    let runRevealPrimed = false;
+    let selectedArtifactPath = load("artifact", null);
+    let artifactLoadingPath = null;
+    const artifactCache = {};
+    let stageRunErrors = {};
+    let autoRunning = false;
+    let finalizeStatus = load("finalizeStatus", null);
+    let finalizeRunning = false;
+    let finalizeRequestToken = 0;
+
+    let closing = load("closing", { ...CLOSING_ORIGINAL });
+
+    function dashboardStatePayload() {
+      return {
+        stage: selectedStage,
+        tab: selectedTab,
+        offerSubmitted,
+        playReveal,
+        handoffOpen,
+        artifact: selectedArtifactPath,
+        closing,
+        finalizeStatus,
+      };
+    }
+
+    function applyDashboardState(nextState) {
+      if (!nextState || typeof nextState !== "object") return;
+      dashboardState = { ...nextState };
+      selectedStage = Number.isFinite(Number(nextState.stage)) ? Number(nextState.stage) : 1;
+      selectedTab = nextState.tab === "lineup" ? "lineup" : "tracker";
+      offerSubmitted = Boolean(nextState.offerSubmitted);
+      playReveal = nextState.playReveal && typeof nextState.playReveal === "object" ? nextState.playReveal : {};
+      handoffOpen = Boolean(nextState.handoffOpen);
+      selectedArtifactPath = typeof nextState.artifact === "string" ? nextState.artifact : null;
+      finalizeStatus =
+        nextState.finalizeStatus && typeof nextState.finalizeStatus === "object" ? nextState.finalizeStatus : null;
+      closing =
+        nextState.closing && typeof nextState.closing === "object"
+          ? { ...CLOSING_ORIGINAL, ...nextState.closing }
+          : { ...CLOSING_ORIGINAL };
+    }
+
+    async function hydrateDashboardState() {
+      try {
+        const res = await fetch(`${STATE_FILE_URL}?v=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) return false;
+        applyDashboardState(await res.json());
+        renderAll();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function queueStateWrite() {
+      if (stateWriteTimer != null) clearTimeout(stateWriteTimer);
+      stateWriteTimer = setTimeout(() => {
+        stateWriteTimer = null;
+        writeDashboardState();
+      }, 120);
+    }
+
+    async function writeDashboardState() {
+      try {
+        dashboardState = dashboardStatePayload();
+        await fetch(STATE_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dashboardState, null, 2),
+        });
+      } catch {
+        // Static Vercel deployments cannot write files; commit dashboard-state.json from local dev to preserve state.
+      }
+    }
+
+    function stripMarkdownLink(value) {
+      const match = value.match(/\[([^\]]+)\]\(([^)]+)\)/);
+      return match ? match[1] : value;
+    }
+
+    function credentialValue(markdown, label) {
+      const match = markdown.match(new RegExp(`- \\*\\*${label}:\\*\\*\\s*([^\\n]+)`));
+      return match ? stripMarkdownLink(match[1].trim()) : "";
+    }
+
+    function closingLooksLikeSample(data) {
+      return (
+        !data ||
+        data.firstName === "Taylor" ||
+        data.lastName === "Applicant" ||
+        data.email === "your.email@domain.com" ||
+        data.linkedin === "https://linkedin.com/in/you"
+      );
+    }
+
+    function closingFromCredentials(markdown) {
+      const fullName = credentialValue(markdown, "Full name");
+      const [firstName = CLOSING_ORIGINAL.firstName, ...restName] = fullName.split(/\s+/).filter(Boolean);
+      const workAuth = credentialValue(markdown, "Work authorization");
+      return {
+        ...CLOSING_ORIGINAL,
+        firstName,
+        lastName: restName.join(" ") || CLOSING_ORIGINAL.lastName,
+        email: credentialValue(markdown, "Email") || CLOSING_ORIGINAL.email,
+        phone: credentialValue(markdown, "Phone") || CLOSING_ORIGINAL.phone,
+        linkedin: credentialValue(markdown, "LinkedIn") || CLOSING_ORIGINAL.linkedin,
+        portfolio: credentialValue(markdown, "Portfolio / personal site") || CLOSING_ORIGINAL.portfolio,
+        workAuth: /sponsor|permit/i.test(workAuth) ? "needs" : "yes",
+      };
+    }
+
+    async function hydrateClosingFromCredentials() {
+      try {
+        const res = await fetch("application/credentials.md");
+        if (!res.ok) return;
+        const next = closingFromCredentials(await res.text());
+        if (!closingLooksLikeSample(closing)) return;
+        closing = next;
+        save("closing", closing);
+        renderAll();
+      } catch {
+        // Opening the file directly may block fetch; hardcoded defaults still cover the form.
+      }
+    }
+
+    function playbackLen(stage) {
+      return (stage.playback || []).length;
+    }
+
+    function revealProgress(stageId) {
+      return playReveal[stageId] ?? 0;
+    }
+
+    /** Stages advance via Run stage; when a stage is finished the primary action becomes Go Next (scrolls to next stage). Stage 6 closes on confirmation. */
+    function stagesEffective() {
+      return STAGES_BASE.map((s) => {
+        if (s.id === 6) {
+          if (offerSubmitted) {
+            return { ...s, status: "done", pill: "Done" };
+          }
+          const stage5 = STAGES_BASE.find((stage) => stage.id === 5);
+          const stage5Done = stage5 ? revealProgress(5) >= playbackLen(stage5) : false;
+          return {
+            ...s,
+            status: "pending",
+            pill: stage5Done ? "In progress" : "Waiting for Start Day",
+          };
+        }
+        const total = playbackLen(s);
+        const n = revealProgress(s.id);
+        if (runningStageId === s.id) {
+          return { ...s, status: "running", pill: "In progress" };
+        }
+        if (total === 0) {
+          return { ...s, status: "done", pill: "Done" };
+        }
+        if (n === 0) {
+          return { ...s, status: "pending", pill: "Not started" };
+        }
+        if (n < total) {
+          return { ...s, status: "running", pill: "In progress" };
+        }
+        return { ...s, status: "done", pill: "Done" };
+      });
+    }
+
+    function dirtyClosing() {
+      return JSON.stringify(closing) !== JSON.stringify(CLOSING_ORIGINAL);
+    }
+
+    function clearArtifactCache() {
+      Object.keys(artifactCache).forEach((path) => {
+        delete artifactCache[path];
+      });
+    }
+
+    function stopStageRun({ abort = false, clearAuto = true } = {}) {
+      activeRunToken++;
+      if (abort && activeRunController) {
+        activeRunController.abort();
+      }
+      activeRunController = null;
+      runningStageId = null;
+      liveRunFeed = null;
+      runRevealPrimed = false;
+      if (clearAuto) autoRunning = false;
+      if (thinkingRaf != null) {
+        cancelAnimationFrame(thinkingRaf);
+        thinkingRaf = null;
+      }
+    }
+
+    function resetStageState() {
+      stopStageRun({ abort: true });
+      finalizeRequestToken++;
+      selectedStage = 1;
+      selectedTab = "tracker";
+      offerSubmitted = false;
+      playReveal = {};
+      handoffOpen = false;
+      stageRunErrors = {};
+      finalizeStatus = null;
+      finalizeRunning = false;
+      selectedArtifactPath = null;
+      artifactLoadingPath = null;
+      clearArtifactCache();
+
+      ["stage", "tab", "offerSubmitted", "playReveal", "handoffOpen", "finalizeStatus", "artifact"].forEach(remove);
+      save("stage", selectedStage);
+      save("tab", selectedTab);
+      save("offerSubmitted", offerSubmitted);
+      save("playReveal", playReveal);
+      save("handoffOpen", handoffOpen);
+    }
+
+    function stage5BrowserPrompt() {
+      return `Use Cursor browser automation to complete Stage 5 for the Opendoor application.
+
+Navigate to:
+${RIPPLING_APPLY_BASE}
+
+Use these repo files as source of truth:
+- application/credentials.md
+- application/resume.md
+- application/cover-letter.md
+- README.md
+
+Current dashboard field values:
+${JSON.stringify(closing, null, 2)}
+
+Automation rules:
+1. Inspect the Rippling page before acting.
+2. Fill the application fields from the dashboard values and application/credentials.md.
+3. Use the public repo URL where a portfolio, website, or additional context link is useful.
+4. PDFs: prefer \`npm run apply:pdfs\` then \`npm run apply:rippling\` (or \`npm run apply:rippling:all\`) so Playwright attaches \`application/generated/*.pdf\` via native file inputs; use Cursor browser only if you are not running those scripts.
+5. Stop on the final review or submit screen. Do not click the final irreversible submit button unless the applicant explicitly confirms in chat.
+6. After submission is confirmed, capture or ask for a screenshot and save it as application/screenshots/rippling-confirmation.png.`;
+    }
+
+    function isNearScrollBottom(el, slackPx = 80) {
+      if (!el) return true;
+      if (el.scrollHeight <= el.clientHeight + 1) return true;
+      const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+      return gap <= slackPx;
+    }
+
+    function bindLiveRunScrollAffinity() {
+      if (runningStageId === null) return;
+      const card = document.querySelector(`#stepper .stage-card[data-stage="${runningStageId}"]`);
+      if (!card) return;
+      const thinking = card.querySelector(".run-thinking");
+      const cardBody = card.querySelector(".step-card-body");
+      if (thinking && !thinking.dataset.liveScrollAffinity) {
+        thinking.dataset.liveScrollAffinity = "1";
+        thinking.addEventListener(
+          "scroll",
+          () => {
+            if (suppressLiveScrollAffinity) return;
+            liveRunScrollFollowThinking = isNearScrollBottom(thinking);
+          },
+          { passive: true },
+        );
+      }
+      if (cardBody && !cardBody.dataset.liveScrollAffinity) {
+        cardBody.dataset.liveScrollAffinity = "1";
+        cardBody.addEventListener(
+          "scroll",
+          () => {
+            if (suppressLiveScrollAffinity) return;
+            liveRunScrollFollowCard = isNearScrollBottom(cardBody);
+          },
+          { passive: true },
+        );
+      }
+    }
+
+    function scrollLiveRunSmart(stageId = runningStageId) {
+      if (stageId === null || stageId === undefined) return;
+      requestAnimationFrame(() => {
+        const cardBody = document.querySelector(`#stepper .stage-card[data-stage="${stageId}"] .step-card-body`);
+        const thinking = document.querySelector(`#stepper .stage-card[data-stage="${stageId}"] .run-thinking`);
+        bindLiveRunScrollAffinity();
+        suppressLiveScrollAffinity = true;
+        const now = performance.now();
+        const useSmooth = now - lastLiveSmoothAt >= 220;
+        if (useSmooth) lastLiveSmoothAt = now;
+        const behavior = useSmooth ? "smooth" : "auto";
+        if (thinking && liveRunScrollFollowThinking) {
+          thinking.scrollTo({ top: thinking.scrollHeight, behavior });
+        }
+        if (cardBody && liveRunScrollFollowCard) {
+          cardBody.scrollTo({ top: cardBody.scrollHeight, behavior });
+        }
+        requestAnimationFrame(() => {
+          suppressLiveScrollAffinity = false;
+        });
+      });
+    }
+
+    /** Update streamed thinking text without re-rendering the whole stepper (avoids scroll/layout thrash). */
+    function patchLiveThinkingDom() {
+      const sid = runningStageId;
+      if (
+        sid === null ||
+        !liveRunFeed ||
+        liveRunFeed.stageId !== sid ||
+        typeof liveRunFeed.text !== "string"
+      )
+        return;
+      const pre = document.querySelector(`#stepper .stage-card[data-stage="${sid}"] .run-thinking`);
+      if (!pre) {
+        renderAll({ followLiveRun: true });
+        return;
+      }
+      const slice = liveRunFeed.text.slice(-14000);
+      if (pre.textContent !== slice) pre.textContent = slice;
+      bindLiveRunScrollAffinity();
+      scrollLiveRunSmart(sid);
+    }
+
+    function scheduleThinkingRender() {
+      if (thinkingRaf != null) return;
+      thinkingRaf = requestAnimationFrame(() => {
+        thinkingRaf = null;
+        patchLiveThinkingDom();
+      });
+    }
+
+    async function readNdjsonStageStream(res, stageId) {
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      const rows = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, idx).trim();
+          buf = buf.slice(idx + 1);
+          if (!line) continue;
+          let msg;
+          try {
+            msg = JSON.parse(line);
+          } catch {
+            continue;
+          }
+          if (msg.type === "call") {
+            if (!liveRunFeed) liveRunFeed = { stageId, text: "" };
+            liveRunFeed.text += (liveRunFeed.text ? "\n\n" : "") + `── ${msg.title} · ${msg.model} ──\n\n`;
+            scheduleThinkingRender();
+          } else if (msg.type === "delta" && msg.text) {
+            if (!liveRunFeed) liveRunFeed = { stageId, text: "" };
+            liveRunFeed.text += msg.text;
+            if (liveRunFeed.text.length > 48000) {
+              liveRunFeed.text = "…[earlier output truncated]\n\n" + liveRunFeed.text.slice(-45000);
+            }
+            scheduleThinkingRender();
+          } else if (msg.type === "row") {
+            rows.push(msg.row);
+          } else if (msg.type === "done") {
+            return { ok: true, rows: msg.rows || rows };
+          } else if (msg.type === "error") {
+            throw new Error(msg.message || "Stream failed");
+          }
+        }
+      }
+      if (rows.length) return { ok: true, rows };
+      return null;
+    }
+
+    async function runStageViaOpenRouter(stageId, signal) {
+      runRevealPrimed = false;
+      liveRunFeed = { stageId, text: "" };
+      scheduleThinkingRender();
+
+      try {
+        const sres = await fetch("/api/run-stage-stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stageId }),
+          signal,
+        });
+        const ct = (sres.headers.get("content-type") || "").toLowerCase();
+        if (sres.ok && sres.body && (ct.includes("ndjson") || ct.includes("x-ndjson"))) {
+          const textBefore = liveRunFeed?.text || "";
+          const out = await readNdjsonStageStream(sres, stageId);
+          if (out?.ok && Array.isArray(out.rows) && out.rows.length) {
+            liveRunFeed = null;
+            runRevealPrimed = true;
+            scheduleThinkingRender();
+            return out.rows;
+          }
+          if ((liveRunFeed?.text || "").length > textBefore.length) {
+            liveRunFeed = null;
+            runRevealPrimed = false;
+            throw new Error("Live stream ended before completion. Check your network and retry.");
+          }
+        }
+      } catch (e) {
+        liveRunFeed = null;
+        runRevealPrimed = false;
+        throw e;
+      }
+
+      liveRunFeed = { stageId, text: "(Non-streaming mode — live output needs `npm run dev`.)\n\n" };
+      scheduleThinkingRender();
+
+      const res = await fetch("/api/run-stage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stageId }),
+        signal,
+      });
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        // A non-dev static server may return HTML/404 here.
+      }
+      if (!res.ok || !data?.ok) {
+        liveRunFeed = null;
+        throw new Error(
+          data?.error ||
+            "OpenRouter stage endpoint is unavailable. Run the dashboard with `npm run dev` so the local server can read OPENROUTER_API_KEY.",
+        );
+      }
+      liveRunFeed = null;
+      runRevealPrimed = true;
+      scheduleThinkingRender();
+      return data.rows || [];
+    }
+
+    function stageMeta(stage) {
+      const meta = {
+        1: ["Gemini + Sonar", "7.1k tokens", "18s"],
+        2: ["Claude Opus", "11k tokens", "42s"],
+        3: ["GPT-4o + Opus + R1", "26.7k tokens", "2m"],
+        4: ["GPT-4o", "3.2k tokens", "24s"],
+        5: ["Sonnet + GPT-4o mini", "2.1k tokens", "--"],
+        6: ["Sonnet", "1.4k tokens", "--"],
+      };
+      const [models, tokens, elapsedAfterRun] = meta[stage.id] || ["Model", "X tokens", "--"];
+      const base = STAGES_BASE.find((s) => s.id === stage.id);
+      const completedRun = base ? revealProgress(stage.id) >= playbackLen(base) : false;
+      const elapsed = completedRun || (stage.id === 6 && offerSubmitted) ? elapsedAfterRun : "--";
+      return `${models} · ${tokens} · elapsed ${elapsed}`;
+    }
+
+    function runDetail(stage, event, index) {
+      const details = {
+        1: [
+          { title: "Read the job post", model: "google/gemini-2.5-pro-preview", provider: "Google", label: "Output" },
+          { title: "Choose the official apply path", model: "perplexity/sonar", provider: "Perplexity", label: "Decision" },
+          { title: "Save the job requirements", model: "google/gemini-2.5-pro-preview", provider: "Google", label: "Instruction used" },
+        ],
+        2: [
+          { title: "Turn the job post into a checklist", model: "anthropic/claude-opus-4", provider: "Anthropic", label: "Output" },
+          { title: "Find missing proof points", model: "anthropic/claude-opus-4", provider: "Anthropic", label: "Decision" },
+          { title: "Generate the requirements map", model: "anthropic/claude-opus-4", provider: "Anthropic", label: "Instruction used" },
+        ],
+        3: [
+          { title: "Draft the resume", model: "openai/gpt-4o", provider: "OpenAI", label: "Output" },
+          { title: "Draft the cover letter", model: "anthropic/claude-opus-4", provider: "Anthropic", label: "Output" },
+          { title: "Review for weak spots", model: "deepseek/deepseek-r1", provider: "DeepSeek", label: "Decision" },
+          { title: "Apply the critique", model: "anthropic/claude-opus-4", provider: "Anthropic", label: "Instruction used" },
+        ],
+        4: [
+          { title: "Check the package before publishing", model: "openai/gpt-4o", provider: "OpenAI", label: "Output" },
+          { title: "Decide what ships now", model: "openai/gpt-4o", provider: "OpenAI", label: "Decision" },
+        ],
+        5: [
+          { title: "Prepare final application fields", model: "openai/gpt-4o-mini", provider: "OpenAI", label: "Output" },
+          { title: "Stop before final submission", model: "anthropic/claude-sonnet", provider: "Anthropic", label: "Decision" },
+        ],
+        6: [
+          { title: "Record confirmation", model: "anthropic/claude-sonnet", provider: "Anthropic", label: "Output" },
+        ],
+      };
+      const fallbackLabel =
+        event.kind === "decision" ? "Decision" : event.kind === "prompt" ? "Instruction used" : "Output";
+      return details[stage.id]?.[index] || {
+        title: `Run step ${index + 1}`,
+        model: "See model lineup",
+        provider: "Model",
+        label: fallbackLabel,
+      };
+    }
+
+    function stageArtifacts(stage) {
+      const artifacts = {
+        1: [
+          ["application/job-posting.md", "Clean job-posting mirror used as the source text."],
+          ["application/surface-comparison.md", "Notes on Rippling, Built In, and other posting surfaces."],
+        ],
+        2: [
+          ["application/requirements-map.md", "Role requirements matched to evidence and gaps."],
+          ["application/credentials.md", "Candidate source facts to fill before final submission."],
+        ],
+        3: [
+          ["application/resume.md", "Tailored resume draft."],
+          ["application/cover-letter.md", "Tailored cover letter draft."],
+          ["application/stage3-rubric.md", "Review notes used to improve the materials."],
+        ],
+        4: [
+          ["README.md", "Repo-facing explanation for reviewers."],
+          ["APPLICATION_CHECKLIST.md", "Pre-submit checklist and repo packaging notes."],
+          ["application/STAGE-5-BROWSER.md", "Browser submission handoff notes."],
+        ],
+        5: [
+          ["application/dashboard.html", "Editable application-field mirror and reviewer dashboard."],
+          ["application/model-calls.jsonl", "Model call log for the staged workflow."],
+        ],
+        6: [
+          ["application/screenshots/rippling-confirmation.png", "Expected submission proof once Rippling confirms."],
+          ["public/index.html", "Built dashboard page for deployment."],
+        ],
+      };
+      return artifacts[stage.id] || [];
+    }
+
+    function artifactsHtml(stage) {
+      const artifacts = stageArtifacts(stage);
+      if (!artifacts.length) return "";
+      const paths = artifacts.map(([path]) => path);
+      const visibleArtifact = paths.includes(selectedArtifactPath) ? selectedArtifactPath : null;
+      return `<div class="artifacts">
+        <strong>Returned artifacts</strong>
+        <div class="artifact-grid">
+          ${artifacts
+            .map(([path, description]) => {
+              const active = path === visibleArtifact;
+              return `<button type="button" class="artifact-card ${active ? "active" : ""}" data-action="artifact" data-path="${escapeHtml(path)}" title="Preview ${escapeHtml(path)}">
+                <strong>${escapeHtml(path)}</strong>
+                <span>${escapeHtml(description)}</span>
+              </button>`;
+            })
+            .join("")}
+        </div>
+        ${visibleArtifact ? artifactViewerHtml(visibleArtifact) : ""}
+      </div>`;
+    }
+
+    function artifactViewerHtml(path) {
+      const cached = artifactCache[path];
+      const isImage = /\.(png|jpe?g|gif|webp)$/i.test(path);
+      const body = isImage
+        ? `<p class="artifact-viewer-empty">Image preview will appear after this artifact exists. Use the GitHub link to view the committed file.</p>`
+        : cached
+          ? `<pre>${escapeHtml(cached)}</pre>`
+          : artifactLoadingPath === path
+            ? `<p class="artifact-viewer-empty">Loading ${escapeHtml(path)}...</p>`
+            : `<p class="artifact-viewer-empty">Click again if the preview does not load automatically.</p>`;
+      return `<div class="artifact-viewer" data-artifact-viewer="${escapeHtml(path)}">
+        <div class="artifact-viewer-head">
+          <strong>${escapeHtml(path)}</strong>
+          <a href="${escapeHtml(artifactBlobUrl(path))}" target="_blank" rel="noopener noreferrer">Open on GitHub</a>
+        </div>
+        ${body}
+      </div>`;
+    }
+
+    async function loadArtifact(path) {
+      if (artifactCache[path] || artifactLoadingPath === path || /\.(png|jpe?g|gif|webp)$/i.test(path)) return;
+      if (Object.prototype.hasOwnProperty.call(EMBEDDED_ARTIFACTS, path)) {
+        artifactCache[path] = EMBEDDED_ARTIFACTS[path];
+        updateArtifactUi();
+        return;
+      }
+      artifactLoadingPath = path;
+      updateArtifactUi();
+      try {
+        const errors = [];
+        for (const url of artifactCandidateUrls(path)) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) {
+              errors.push(`${url}: HTTP ${res.status}`);
+              continue;
+            }
+            artifactCache[path] = await res.text();
+            break;
+          } catch (err) {
+            errors.push(`${url}: ${err.message}`);
+          }
+        }
+        if (!artifactCache[path]) {
+          throw new Error(errors.join("\n"));
+        }
+      } catch (err) {
+        artifactCache[path] = `Could not load ${path} inside the dashboard.\n\nTried local source and built artifact paths:\n${err.message}`;
+      } finally {
+        artifactLoadingPath = null;
+        updateArtifactUi();
+      }
+    }
+
+    /** Prefer the .artifacts block that lists this path (click may be on a non-active stage). */
+    function artifactHostForSelection() {
+      if (!selectedArtifactPath) return null;
+      const matchBtn = Array.from(document.querySelectorAll("[data-action='artifact']")).find(
+        (b) => b.dataset.path === selectedArtifactPath,
+      );
+      if (matchBtn) return matchBtn.closest(".artifacts");
+      return document.querySelector(".stage-card.active .artifacts");
+    }
+
+    function updateArtifactUi() {
+      document.querySelectorAll("[data-action='artifact']").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.path === selectedArtifactPath);
+      });
+
+      const host = artifactHostForSelection();
+      if (!host || !selectedArtifactPath) return;
+
+      const existing = host.querySelector(".artifact-viewer");
+      const html = artifactViewerHtml(selectedArtifactPath);
+      if (existing) {
+        existing.outerHTML = html;
+      } else {
+        host.insertAdjacentHTML("beforeend", html);
+      }
+    }
+
+    function stageBodyHtml(st) {
+      const hideStageAction = (st.id === 6 && st.status === "pending") || (st.id === 6 && st.status === "done");
+      const stageRunning = runningStageId === st.id;
+      const goNext = st.status === "done" && st.id < 6;
+      const primaryAction = goNext ? "go-next" : "play";
+      const primaryLabel = stageRunning
+        ? autoRunning
+          ? "Running autopilot..."
+          : "Running stage..."
+        : goNext
+          ? "Go Next"
+          : st.id === 1
+            ? "Run stages"
+            : "Run stage";
+      const runStageBtn = hideStageAction
+        ? ""
+        : `<div class="panel-head-run">
+          <button type="button" class="btn btn-primary" data-action="${primaryAction}" data-stage="${st.id}" ${stageRunning ? "disabled" : ""}>
+            ${stageRunning ? `<span class="btn-spinner" aria-hidden="true"></span><span>${primaryLabel}</span>` : primaryLabel}
+          </button>
+        </div>`;
+
+      let body = `<div class="stage-explainer">
+        <strong>What this stage does</strong>
+        <p>${escapeHtml(st.explainer || st.previewPending || "")}</p>
+      </div>`;
+
+      if (st.status === "pending" && st.id === 6) {
+        body += `<p class="meta">${escapeHtml(st.previewPending)}</p>`;
+        body += `<label class="confirmation-check">
+          <input type="checkbox" data-action="submitted" ${offerSubmitted ? "checked" : ""} />
+          <span>Rippling confirmation received — mark Stage 6 complete</span>
+        </label>`;
+      } else if (st.status === "pending") {
+        body += `<p class="meta">${escapeHtml(st.previewPending)}</p>`;
+        body += `<div class="playback"><h4>Run details</h4><div>${playbackEventsHtml(st)}</div></div>`;
+      } else {
+        body += `<div class="playback"><h4>Run details</h4><div>${playbackEventsHtml(st)}</div></div>`;
+
+        body += artifactsHtml(st);
+
+        if (st.id === 3) {
+          body += `<div class="flow3">
+            <div class="flow-card"><strong>Opus + GPT draft</strong><span>Resume structured · Letter voiced.</span></div>
+            <div class="flow-card"><strong>DeepSeek R1</strong><span>Rubric 8/10 relevance · 7/10 specificity · tighten metrics.</span></div>
+            <div class="flow-card"><strong>Opus revise</strong><span>Final Markdown synced to repo artifacts.</span></div>
+          </div>`;
+        }
+
+        if (st.id === 5) {
+          const handoffPrompt = stage5BrowserPrompt();
+          body += `<h4 style="margin:28px 0 8px;font-size:14px;">Closing Documents</h4>
+          <p class="meta">Mirror of the closing docs — edit here, then sync live Rippling via browser if needed.</p>
+          <p class="meta" style="font-style:italic;">Sign here, here, and here.</p>
+          <div class="grid-form">
+            <div><label>First name</label><input data-field="firstName" value="${escapeHtml(closing.firstName)}" /></div>
+            <div><label>Last name</label><input data-field="lastName" value="${escapeHtml(closing.lastName)}" /></div>
+            <div><label>Email</label><input data-field="email" type="email" value="${escapeHtml(closing.email)}" /></div>
+            <div><label>Phone</label><input data-field="phone" value="${escapeHtml(closing.phone)}" /></div>
+            <div style="grid-column:1/-1;"><label>LinkedIn</label><input data-field="linkedin" type="url" value="${escapeHtml(closing.linkedin)}" /></div>
+            <div style="grid-column:1/-1;"><label>Portfolio / repo</label><input data-field="portfolio" type="url" value="${escapeHtml(closing.portfolio)}" /></div>
+            <div style="grid-column:1/-1;">
+              <label>Work authorization</label>
+              <select data-field="workAuth"><option value="yes" ${closing.workAuth === "yes" ? "selected" : ""}>Authorized to work in Canada</option><option value="needs" ${closing.workAuth === "needs" ? "selected" : ""}>Requires sponsorship</option></select>
+            </div>
+            <div style="grid-column:1/-1;">
+              <label>Cover note</label><textarea data-field="coverNote">${escapeHtml(closing.coverNote)}</textarea>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:18px;">
+            <button type="button" class="btn btn-primary" data-action="sign" data-stage="${st.id}">Prepare Browser Handoff</button>
+          </div>
+          <p style="font-size:12px;color:#66707c;margin-top:8px;">Cursor can drive the browser, but this page will stop before any irreversible submit.</p>`;
+
+          if (handoffOpen) {
+            const d = dirtyClosing();
+            const diffHtml = d
+              ? `<p style="margin:12px 0 6px;font-size:13px;"><strong>Closing diff</strong> — ask the agent to sync Rippling if you edited fields.</p><pre style="font-family:var(--mono);font-size:11px;padding:12px;background:#eef2f6;border:1px solid rgba(32,36,42,0.16);border-radius:8px;overflow:auto;">${escapeHtml(JSON.stringify(CLOSING_ORIGINAL, null, 2))}\n---\n${escapeHtml(JSON.stringify(closing, null, 2))}</pre>`
+              : "";
+            body += `<div class="callout" style="margin-top:18px;">
+              <strong>Cursor browser handoff</strong><br />
+              Copy the prompt below into Cursor and let the browser agent fill the form. The prompt tells it to stop before final submit unless you confirm.<br /><br />
+              <div class="btn-row">
+                <button type="button" class="btn btn-ghost" data-action="copy-handoff">Copy Cursor prompt</button>
+              </div>
+              <pre style="font-family:var(--mono);font-size:11px;padding:12px;background:#fff;border:1px solid rgba(32,36,42,0.16);border-radius:8px;overflow:auto;max-height:240px;white-space:pre-wrap;">${escapeHtml(handoffPrompt)}</pre>
+              ${diffHtml}
+            </div>`;
+          }
+        }
+
+        if (st.id === 6 && offerSubmitted) {
+          const finalizeHtml = finalizeRunning
+            ? `<p style="margin-top:10px;">Committing generated artifacts and pushing...</p>`
+            : finalizeStatus?.ok
+              ? `<p style="margin-top:10px;">Generated artifacts committed${finalizeStatus.committed ? "" : " (no new commit needed)"} and pushed.</p>`
+              : finalizeStatus?.error
+                ? `<p style="margin-top:10px;color:#9f2f2f;">Finalize failed: ${escapeHtml(finalizeStatus.error)}</p>`
+                : "";
+          body += `<div class="callout success" style="margin-top:20px;">
+            <strong>Offer is in. Awaiting response.</strong><br />
+            Save confirmation as <code style="font-family:var(--mono);font-size:12px;">application/screenshots/rippling-confirmation.png</code>
+            ${finalizeHtml}
+          </div>`;
+        }
+      }
+
+      return `
+        <div class="panel-head">
+          <div class="panel-head-titles">
+            <h3>Stage ${st.id} · ${escapeHtml(st.display)}</h3>
+            <span class="internal">${escapeHtml(st.internal)}</span>
+          </div>
+          ${runStageBtn}
+        </div>
+        <div class="panel-body">${body}</div>`;
+    }
+
+    function renderStepper() {
+      const stages = stagesEffective();
+      const el = document.getElementById("stepper");
+      el.innerHTML = stages
+        .map((s, i) => {
+          const active = s.id === selectedStage;
+          const pillLabel = s.pill;
+          let pillCls = "pill";
+          if (s.status === "pending") {
+            pillCls += s.pill === "In progress" ? " pending" : " idle";
+          } else if (s.status === "running") {
+            pillCls += active ? " active" : " pending";
+          } else if (active) {
+            pillCls += " active";
+          } else {
+            pillCls += " done";
+          }
+          const cell = `<article class="step">
+            <div class="step-kicker">
+              <div class="step-label">
+                <span>Stage ${s.id} · ${escapeHtml(s.display)}</span>
+                <span class="${pillCls}">${pillLabel}</span>
+              </div>
+              <span class="step-meta">${escapeHtml(stageMeta(s))}</span>
+            </div>
+            <div class="step-btn stage-card ${active ? "active" : ""} ${s.id === runningStageId ? "running" : ""}" data-stage="${s.id}" role="button" tabindex="0">
+              <div class="step-card-body">
+                ${stageBodyHtml(s)}
+              </div>
+            </div>
+          </article>`;
+          const sep =
+            i < stages.length - 1 ? `<span class="step-sep" aria-hidden="true"></span>` : "";
+          return cell + sep;
+        })
+        .join("");
+      el.querySelectorAll(".stage-card").forEach((card) => {
+        const selectCard = () => {
+          selectedStage = Number(card.dataset.stage);
+          save("stage", selectedStage);
+          renderAll();
+          requestAnimationFrame(() => {
+            document
+              .querySelector(`#stepper .stage-card[data-stage="${selectedStage}"]`)
+              ?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          });
+        };
+        card.addEventListener("click", (e) => {
+          if (e.target.closest("button, a, input, textarea, select, label")) return;
+          selectCard();
+        });
+        card.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          selectCard();
+        });
+      });
+
+      function scrollStageIntoView(stageId) {
+        requestAnimationFrame(() => {
+          document
+            .querySelector(`#stepper .stage-card[data-stage="${stageId}"]`)
+            ?.scrollIntoView({ behavior: "smooth", inline: "center", block: "center" });
+        });
+      }
+
+      async function revealStagePlayback(stageId, max, runToken) {
+        if (runToken !== activeRunToken || runningStageId !== stageId) return false;
+        runRevealPrimed = false;
+        playReveal[stageId] = max;
+        save("playReveal", playReveal);
+        runningStageId = null;
+        renderAll();
+        return true;
+      }
+
+      async function runStage(stageId) {
+        const baseStage = STAGES_BASE.find((s) => s.id === stageId);
+        if (!baseStage) return false;
+        stopStageRun({ abort: true, clearAuto: false });
+        const runToken = activeRunToken;
+        activeRunController = new AbortController();
+        selectedStage = stageId;
+        save("stage", selectedStage);
+        const max = playbackLen(baseStage) || 1;
+        runningStageId = stageId;
+        liveRunScrollFollowThinking = true;
+        liveRunScrollFollowCard = true;
+        playReveal[stageId] = 0;
+        delete stageRunErrors[stageId];
+        save("playReveal", playReveal);
+        renderAll();
+        scrollStageIntoView(stageId);
+        try {
+          await runStageViaOpenRouter(stageId, activeRunController.signal);
+        } catch (err) {
+          if (runToken !== activeRunToken || err?.name === "AbortError") {
+            return false;
+          }
+          runningStageId = null;
+          liveRunFeed = null;
+          runRevealPrimed = false;
+          activeRunController = null;
+          autoRunning = false;
+          stageRunErrors[stageId] = String(err?.message || err);
+          renderAll();
+          return false;
+        }
+        if (runToken !== activeRunToken) return false;
+        activeRunController = null;
+        return revealStagePlayback(stageId, max, runToken);
+      }
+
+      async function runAutopilotFrom(stageId) {
+        autoRunning = true;
+        try {
+          for (let id = stageId; id <= 5; id++) {
+            const ok = await runStage(id);
+            if (!ok) return;
+            if (id < 5) {
+              selectedStage = id + 1;
+              save("stage", selectedStage);
+              renderAll();
+              scrollStageIntoView(selectedStage);
+              await new Promise((resolve) => setTimeout(resolve, 350));
+            }
+          }
+          handoffOpen = true;
+          selectedStage = 5;
+          save("handoffOpen", handoffOpen);
+          save("stage", selectedStage);
+          renderAll();
+          scrollStageIntoView(5);
+        } finally {
+          autoRunning = false;
+          renderAll();
+        }
+      }
+
+      el.querySelectorAll("[data-action='go-next']").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const stageId = Number(btn.dataset.stage);
+          const nextId = stageId + 1;
+          if (nextId > 6) return;
+          selectedStage = nextId;
+          save("stage", selectedStage);
+          renderAll();
+          scrollStageIntoView(selectedStage);
+        });
+      });
+
+      el.querySelectorAll("[data-action='play']").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const stageId = Number(btn.dataset.stage);
+          if (autoRunning || runningStageId !== null) return;
+          if (stageId === 1) {
+            await runAutopilotFrom(stageId);
+            return;
+          }
+          await runStage(stageId);
+        });
+      });
+
+      el.querySelectorAll("[data-action='sign']").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          selectedStage = Number(btn.dataset.stage);
+          handoffOpen = true;
+          save("stage", selectedStage);
+          save("handoffOpen", handoffOpen);
+          renderAll();
+        });
+      });
+
+      el.querySelectorAll("[data-action='copy-handoff']").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(stage5BrowserPrompt());
+            btn.textContent = "Copied";
+            setTimeout(() => {
+              btn.textContent = "Copy Cursor prompt";
+            }, 1200);
+          } catch {
+            btn.textContent = "Copy failed";
+          }
+        });
+      });
+
+      el.querySelectorAll("[data-action='artifact']").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const path = btn.dataset.path;
+          if (!path) return;
+          selectedArtifactPath = path;
+          save("artifact", selectedArtifactPath);
+          updateArtifactUi();
+          loadArtifact(path);
+        });
+      });
+
+      bindLiveRunScrollAffinity();
+    }
+
+    function playbackEventsHtml(stage) {
+      const n = playReveal[stage.id] ?? 0;
+      if (stageRunErrors[stage.id]) {
+        return `<div class="run-empty">
+          <div class="run-empty-icon" aria-hidden="true">!</div>
+          <div>
+            <strong>OpenRouter run failed</strong>
+            <p>${escapeHtml(stageRunErrors[stage.id])}</p>
+          </div>
+        </div>`;
+      }
+      const items = (stage.playback || []).slice(0, n);
+      if (runningStageId === stage.id && !items.length) {
+        const thinkingSlice =
+          liveRunFeed && liveRunFeed.stageId === stage.id && liveRunFeed.text
+            ? liveRunFeed.text.slice(-14000)
+            : "";
+        const thinkingBlock = thinkingSlice
+          ? `<pre class="run-thinking" role="log" aria-live="polite" aria-relevant="additions text">${escapeHtml(thinkingSlice)}</pre>`
+          : "";
+        if (runRevealPrimed) {
+          return `<div class="run-status"><span class="run-dot" aria-hidden="true"></span><span>Run complete. Revealing the first check…</span></div>`;
+        }
+        return `<div class="run-status"><span class="run-dot" aria-hidden="true"></span><span>Running this stage now. Model output streams below as tokens arrive.</span></div>${thinkingBlock}`;
+      }
+      if (!items.length) return `<div class="run-empty">
+        <div class="run-empty-icon" aria-hidden="true">▶</div>
+        <div>
+          <strong>Ready to run</strong>
+          <p>Run this stage to reveal the checks, model choices, decisions, and outputs that produced this part of the application.</p>
+        </div>
+      </div>`;
+      const renderedItems = items
+        .map((ev, index) => {
+          const detail = runDetail(stage, ev, index);
+          const inner = eventBodyHtml(ev);
+          return `<div class="event ${ev.kind === "prompt" ? "prompt" : ""}">
+            <div class="event-head">
+              <div class="event-title">${escapeHtml(detail.title)}</div>
+              <div class="model-chip">${escapeHtml(detail.provider)} · ${escapeHtml(detail.model)}</div>
+            </div>
+            <div class="tag">${escapeHtml(detail.label)}</div>
+            ${inner}
+          </div>`;
+        })
+        .join("");
+      if (runningStageId !== stage.id) return renderedItems;
+      return `${renderedItems}<div class="run-status"><span class="run-dot" aria-hidden="true"></span><span>Still running. More details may appear.</span></div>`;
+    }
+
+    function eventBodyHtml(ev) {
+      if (ev.table) {
+        return `<p style="margin:0 0 8px;color:#20242a;">${escapeHtml(ev.body)}</p>${workTableHtml(ev.table.headers, ev.table.rows)}`;
+      }
+      if (ev.items) {
+        return `<p style="margin:0 0 8px;color:#20242a;">${escapeHtml(ev.body)}</p><ul class="work-list">${ev.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+      }
+      if (ev.kind === "prompt") {
+        return `<pre>${escapeHtml(ev.body)}</pre>`;
+      }
+      return `<p style="margin:0;color:#20242a;">${escapeHtml(ev.body)}</p>`;
+    }
+
+    function workTableHtml(headers, rows) {
+      return `<table class="work-table">
+        <thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
+        <tbody>${rows
+          .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+          .join("")}</tbody>
+      </table>`;
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function tableInnerHtml(headers, rows) {
+      const head = `<thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>`;
+      const body = `<tbody>${rows
+        .map(
+          (r) =>
+            `<tr>${r
+              .map((cell, i) => {
+                const isUrlCol = i === 1;
+                const href =
+                  typeof cell === "string" && cell.startsWith("http")
+                    ? cell
+                    : "#";
+                return isUrlCol
+                  ? `<td class="url"><a href="${escapeHtml(href)}" target="_blank" rel="noopener">${escapeHtml(cell)}</a></td>`
+                  : `<td>${escapeHtml(cell)}</td>`;
+              })
+              .join("")}</tr>`,
+        )
+        .join("")}</tbody>`;
+      return head + body;
+    }
+
+    function tableHtml(headers, rows) {
+      return `<table class="data">${tableInnerHtml(headers, rows)}</table>`;
+    }
+
+    function renderLineup() {
+      const headers = ["Stage area", "Model", "Provider", "Why", "Tok-ish", "Run", "Elapsed"];
+      const rows = MODEL_LINEUP_ROWS.map((row) => {
+        const run = lineupRunState(row);
+        return [row.area, row.model, row.provider, row.why, row.tokens, run.status, run.elapsed];
+      });
+      const tbl = document.getElementById("lineup-table");
+      tbl.innerHTML = tableInnerHtml(headers, rows);
+    }
+
+    function lineupRunState(row) {
+      if (!row.stageId) return { status: "Reference", elapsed: "--" };
+      const revealed = revealProgress(row.stageId);
+      if (revealed >= row.step) return { status: "Done", elapsed: row.elapsed };
+      if (runningStageId === row.stageId) return { status: "Running", elapsed: "running" };
+      if (revealed > 0) return { status: "Waiting", elapsed: "--" };
+      return { status: "Not run", elapsed: "--" };
+    }
+
+    function renderTabs() {
+      document.querySelectorAll("[data-tab]").forEach((btn) => {
+        const active = btn.dataset.tab === selectedTab;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      document.getElementById("panel-tracker").hidden = selectedTab !== "tracker";
+      document.getElementById("panel-lineup").hidden = selectedTab !== "lineup";
+    }
+
+    function currentStageCardBody() {
+      return document.querySelector(`#stepper .stage-card[data-stage="${selectedStage}"] .step-card-body`);
+    }
+
+    function renderAll(options = {}) {
+      const followLiveRun = options.followLiveRun && runningStageId !== null;
+      const scrollTop = options.preserveStageScroll && !followLiveRun ? currentStageCardBody()?.scrollTop : null;
+      document.getElementById("link-job").href = JOB_BOARD_URL;
+      document.getElementById("link-repo").href = REPO_PLACEHOLDER;
+      renderTabs();
+      renderStepper();
+      renderLineup();
+      if (followLiveRun) {
+        scrollLiveRunSmart();
+      } else if (scrollTop !== null && scrollTop !== undefined) {
+        requestAnimationFrame(() => {
+          const cardBody = currentStageCardBody();
+          if (cardBody) cardBody.scrollTop = scrollTop;
+        });
+      }
+    }
+
+    document.querySelectorAll("[data-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectedTab = btn.dataset.tab;
+        save("tab", selectedTab);
+        renderAll();
+      });
+    });
+
+    document.getElementById("btn-reset-stages").addEventListener("click", () => {
+      resetStageState();
+      renderAll();
+    });
+
+    const stepperEl = document.getElementById("stepper");
+
+    // Keep horizontal stage navigation responsive without hijacking normal vertical reads inside a stage card.
+    stepperEl.addEventListener(
+      "wheel",
+      (e) => {
+        const horizontalIntent = Math.abs(e.deltaX) > 0 || e.shiftKey;
+        if (!horizontalIntent) return;
+        e.preventDefault();
+        const dx = Math.abs(e.deltaX) > 0 ? e.deltaX : e.deltaY;
+        stepperEl.scrollLeft += dx;
+      },
+      { passive: false },
+    );
+
+    stepperEl.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement)) return;
+      const key = t.dataset.field;
+      if (!key) return;
+      closing[key] = t.value;
+      save("closing", closing);
+    });
+
+    stepperEl.addEventListener("change", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement)) return;
+      if (t.dataset.action !== "submitted") return;
+      offerSubmitted = t.checked;
+      save("offerSubmitted", offerSubmitted);
+      renderAll();
+      if (!offerSubmitted) return;
+      const finalizeToken = ++finalizeRequestToken;
+      finalizeRunning = true;
+      finalizeStatus = null;
+      save("finalizeStatus", finalizeStatus);
+      renderAll();
+      fetch("/api/finalize-submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmed: true }),
+      })
+        .then(async (res) => {
+          let data = null;
+          try {
+            data = await res.json();
+          } catch {
+            data = null;
+          }
+          if (!res.ok || !data?.ok) {
+            throw new Error(
+              data?.error ||
+                "Finalize endpoint is unavailable. Run the dashboard with `npm run dev` so the local server can commit and push.",
+            );
+          }
+          if (finalizeToken !== finalizeRequestToken) return;
+          finalizeStatus = { ok: true, committed: Boolean(data.committed) };
+        })
+        .catch((err) => {
+          if (finalizeToken !== finalizeRequestToken) return;
+          finalizeStatus = { ok: false, error: String(err?.message || err) };
+        })
+        .finally(() => {
+          if (finalizeToken !== finalizeRequestToken) return;
+          finalizeRunning = false;
+          save("finalizeStatus", finalizeStatus);
+          renderAll();
+        });
+    });
+
+    renderAll();
+    hydrateDashboardState().then(() => hydrateClosingFromCredentials());
+    requestAnimationFrame(() => {
+      document.body.classList.add("dashboard-ready");
+    });
+  </script>
+</body>
+</html>

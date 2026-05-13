@@ -1,0 +1,20 @@
+{
+  "name": "opendoor-ai-ops-application",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "apply:materials": "node scripts/generate-application-materials.mjs && npm run apply:pdfs",
+    "apply:pdfs": "node scripts/rippling-print-pdfs.mjs",
+    "apply:rippling": "node scripts/rippling-playwright-apply.mjs",
+    "apply:rippling:all": "npm run apply:materials && npm run apply:rippling",
+    "apply:stage5": "node scripts/stage5-handoff.mjs",
+    "submit:finalize": "node scripts/finalize-submission.mjs",
+    "build": "node scripts/copy-dashboard.mjs",
+    "dev": "node scripts/dev-dashboard.mjs",
+    "openrouter": "node scripts/openrouter.mjs",
+    "smoke": "node scripts/smoke-openrouter.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.52.0"
+  }
+}

@@ -1,0 +1,10 @@
+.env
+node_modules/
+application/_smoke-prompt.txt
+application/*.pdf
+application/generated/
+application/*-print.html
+.DS_Store
+.cursor/
+# Built output — regenerate with `npm run build` (copies dashboard + application artifacts).
+public/

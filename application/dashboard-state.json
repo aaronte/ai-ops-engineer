@@ -1,0 +1,19 @@
+{
+  "stage": 1,
+  "tab": "tracker",
+  "offerSubmitted": false,
+  "playReveal": {},
+  "handoffOpen": false,
+  "artifact": null,
+  "closing": {
+    "firstName": "[REPLACE_ME]",
+    "lastName": "[REPLACE_ME]",
+    "email": "[REPLACE_ME]",
+    "phone": "[REPLACE_ME]",
+    "linkedin": "[REPLACE_ME]",
+    "portfolio": "[REPLACE_ME]",
+    "workAuth": "[REPLACE_ME]",
+    "coverNote": "[REPLACE_ME]"
+  },
+  "finalizeStatus": null
+}
